@@ -5,11 +5,20 @@
  */
 
 import assert from 'node:assert';
+import path from 'node:path';
 import {describe, it} from 'node:test';
 
+import type {ParsedArguments} from '../../src/cli.js';
+import {installExtension} from '../../src/tools/extensions.js';
 import {evaluateScript} from '../../src/tools/script.js';
 import {serverHooks} from '../server.js';
 import {html, withMcpContext} from '../utils.js';
+import {extractId} from './extensions.test.js';
+
+const EXTENSION_PATH = path.join(
+  import.meta.dirname,
+  '../../../tests/tools/fixtures/extension-sw',
+);
 
 describe('script', () => {
   const server = serverHooks();
@@ -17,7 +26,7 @@ describe('script', () => {
   describe('browser_evaluate_script', () => {
     it('evaluates', async () => {
       await withMcpContext(async (response, context) => {
-        await evaluateScript.handler(
+        await evaluateScript().handler(
           {
             params: {function: String(() => 2 * 5)},
             page: context.getSelectedPage(),
@@ -31,7 +40,7 @@ describe('script', () => {
     });
     it('runs in selected page', async () => {
       await withMcpContext(async (response, context) => {
-        await evaluateScript.handler(
+        await evaluateScript().handler(
           {
             params: {function: String(() => document.title)},
             page: context.getSelectedPage(),
@@ -51,7 +60,7 @@ describe('script', () => {
         `);
 
         response.resetResponseLineForTesting();
-        await evaluateScript.handler(
+        await evaluateScript().handler(
           {
             params: {function: String(() => document.title)},
             page: context.getSelectedPage(),
@@ -71,7 +80,7 @@ describe('script', () => {
 
         await page.setContent(html`<script src="./scripts.js"></script> `);
 
-        await evaluateScript.handler(
+        await evaluateScript().handler(
           {
             params: {
               function: String(() => {
@@ -100,7 +109,7 @@ describe('script', () => {
 
         await page.setContent(html`<script src="./scripts.js"></script> `);
 
-        await evaluateScript.handler(
+        await evaluateScript().handler(
           {
             params: {
               function: String(async () => {
@@ -126,7 +135,7 @@ describe('script', () => {
 
         await context.createTextSnapshot();
 
-        await evaluateScript.handler(
+        await evaluateScript().handler(
           {
             params: {
               function: String(async (el: Element) => {
@@ -152,7 +161,7 @@ describe('script', () => {
 
         await context.createTextSnapshot();
 
-        await evaluateScript.handler(
+        await evaluateScript().handler(
           {
             params: {
               function: String((container: Element, child: Element) => {
@@ -181,7 +190,7 @@ describe('script', () => {
         const page = context.getSelectedPage();
         await page.goto(server.getRoute('/main'));
         await context.createTextSnapshot();
-        await evaluateScript.handler(
+        await evaluateScript().handler(
           {
             params: {
               function: String((element: Element) => {
@@ -197,6 +206,54 @@ describe('script', () => {
         const lineEvaluation = response.responseLines.at(2)!;
         assert.strictEqual(JSON.parse(lineEvaluation), 'I am iframe button');
       });
+    });
+    it('evaluates inside extension service worker', async () => {
+      await withMcpContext(
+        async (response, context) => {
+          await installExtension.handler(
+            {params: {path: EXTENSION_PATH}},
+            response,
+            context,
+          );
+
+          const extensionId = extractId(response);
+          const swTarget = await context.browser.waitForTarget(
+            t => t.type() === 'service_worker' && t.url().includes(extensionId),
+          );
+
+          await context.createExtensionServiceWorkersSnapshot();
+          const swList = context.getExtensionServiceWorkers();
+          const sw = swList.find(s => s.target === swTarget);
+
+          if (!sw) {
+            assert.fail('Service worker not found in context list');
+          }
+
+          const swId = context.getExtensionServiceWorkerId(sw);
+
+          response.resetResponseLineForTesting();
+          await evaluateScript({
+            categoryExtensions: true,
+          } as ParsedArguments).handler(
+            {
+              params: {
+                function: String(() => {
+                  return 'chrome' in globalThis ? 'has-chrome' : 'no-chrome';
+                }),
+                serviceWorkerId: swId,
+              },
+              page: context.getSelectedPage(),
+            },
+            response,
+            context,
+          );
+
+          const lineEvaluation = response.responseLines.at(2)!;
+          assert.strictEqual(JSON.parse(lineEvaluation), 'has-chrome');
+        },
+        {},
+        {categoryExtensions: true} as ParsedArguments,
+      );
     });
   });
 });

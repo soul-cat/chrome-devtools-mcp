@@ -5,6 +5,7 @@
  */
 
 import type {ParsedArguments} from '../cli.js';
+import {ExtensionServiceWorker} from '../McpContext.js';
 import {zod} from '../third_party/index.js';
 import type {
   Dialog,
@@ -189,6 +190,10 @@ export type Context = Readonly<{
   uninstallExtension(id: string): Promise<void>;
   listExtensions(): InstalledExtension[];
   getExtension(id: string): InstalledExtension | undefined;
+  getExtensionServiceWorkers(): ExtensionServiceWorker[];
+  getExtensionServiceWorkerId(
+    extensionServiceWorker: ExtensionServiceWorker,
+  ): string | undefined;
 }>;
 
 export function defineTool<Schema extends zod.ZodRawShape>(
