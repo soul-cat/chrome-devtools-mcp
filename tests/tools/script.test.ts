@@ -13,6 +13,7 @@ import {installExtension} from '../../src/tools/extensions.js';
 import {evaluateScript} from '../../src/tools/script.js';
 import {serverHooks} from '../server.js';
 import {html, withMcpContext} from '../utils.js';
+
 import {extractId} from './extensions.test.js';
 
 const EXTENSION_PATH = path.join(

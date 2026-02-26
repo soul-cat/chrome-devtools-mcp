@@ -5,7 +5,7 @@
  */
 
 import type {ParsedArguments} from '../cli.js';
-import {ExtensionServiceWorker} from '../McpContext.js';
+import type {ExtensionServiceWorker} from '../McpContext.js';
 import {zod} from '../third_party/index.js';
 import type {
   Dialog,

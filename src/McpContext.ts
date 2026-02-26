@@ -34,8 +34,6 @@ import type {
 } from './third_party/index.js';
 import {Locator} from './third_party/index.js';
 import {PredefinedNetworkConditions} from './third_party/index.js';
-import {listPages} from './tools/pages.js';
-import {takeSnapshot} from './tools/snapshot.js';
 import {CLOSE_PAGE_ERROR} from './tools/ToolDefinition.js';
 import type {Context, DevToolsData} from './tools/ToolDefinition.js';
 import type {TraceResult} from './trace-processing/parse.js';
@@ -510,7 +508,7 @@ export class McpContext implements Context {
     }
     if (page.isClosed()) {
       throw new Error(
-        `The selected page has been closed. Call ${listPages().name} to see open pages.`,
+        `The selected page has been closed. Call list_pages to see open pages.`,
       );
     }
     return page;
@@ -622,7 +620,7 @@ export class McpContext implements Context {
       const mcpPage = this.#mcpPages.get(page);
       if (!mcpPage?.textSnapshot) {
         throw new Error(
-          `No snapshot found for page ${mcpPage?.id ?? '?'}. Use ${takeSnapshot.name} to capture one.`,
+          `No snapshot found for page ${mcpPage?.id ?? '?'}. Use take_snapshot to capture one.`,
         );
       }
       const node = mcpPage.textSnapshot.idToNode.get(uid);
@@ -663,9 +661,7 @@ export class McpContext implements Context {
       }
     }
     if (!anySnapshot) {
-      throw new Error(
-        `No snapshot found. Use ${takeSnapshot.name} to capture one.`,
-      );
+      throw new Error(`No snapshot found. Use take_snapshot to capture one.`);
     }
     throw new Error('No such element found in any snapshot.');
   }
