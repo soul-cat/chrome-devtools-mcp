@@ -30,7 +30,6 @@ describe('script', () => {
         await evaluateScript().handler(
           {
             params: {function: String(() => 2 * 5)},
-            page: context.getSelectedPage(),
           },
           response,
           context,
@@ -44,7 +43,6 @@ describe('script', () => {
         await evaluateScript().handler(
           {
             params: {function: String(() => document.title)},
-            page: context.getSelectedPage(),
           },
           response,
           context,
@@ -64,7 +62,6 @@ describe('script', () => {
         await evaluateScript().handler(
           {
             params: {function: String(() => document.title)},
-            page: context.getSelectedPage(),
           },
           response,
           context,
@@ -92,7 +89,6 @@ describe('script', () => {
                 return {scripts};
               }),
             },
-            page: context.getSelectedPage(),
           },
           response,
           context,
@@ -118,7 +114,6 @@ describe('script', () => {
                 return 'Works';
               }),
             },
-            page: context.getSelectedPage(),
           },
           response,
           context,
@@ -144,7 +139,6 @@ describe('script', () => {
               }),
               args: [{uid: '1_1'}],
             },
-            page: context.getSelectedPage(),
           },
           response,
           context,
@@ -170,7 +164,6 @@ describe('script', () => {
               }),
               args: [{uid: '1_0'}, {uid: '1_1'}],
             },
-            page: context.getSelectedPage(),
           },
           response,
           context,
@@ -199,7 +192,6 @@ describe('script', () => {
               }),
               args: [{uid: '1_3'}],
             },
-            page: context.getSelectedPage(),
           },
           response,
           context,
@@ -243,7 +235,6 @@ describe('script', () => {
                 }),
                 serviceWorkerId: swId,
               },
-              page: context.getSelectedPage(),
             },
             response,
             context,

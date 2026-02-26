@@ -10,11 +10,11 @@ import type {Frame, JSHandle, Page, WebWorker} from '../third_party/index.js';
 
 import {ToolCategory} from './categories.js';
 import type {Context} from './ToolDefinition.js';
-import {definePageTool} from './ToolDefinition.js';
+import {defineTool, pageIdSchema} from './ToolDefinition.js';
 
 export type Evaluatable = Page | Frame | WebWorker;
 
-export const evaluateScript = definePageTool(cliArgs => {
+export const evaluateScript = defineTool(cliArgs => {
   return {
     name: 'evaluate_script',
     description: `Evaluate a JavaScript function inside the currently selected page. Returns the response as JSON,
@@ -48,6 +48,7 @@ Example with arguments: \`(el) => {
         )
         .optional()
         .describe(`An optional list of arguments to pass to the function.`),
+      ...(cliArgs?.experimentalPageIdRouting ? pageIdSchema : {}),
       ...(cliArgs?.categoryExtensions
         ? {
             serviceWorkerId: zod
@@ -60,17 +61,22 @@ Example with arguments: \`(el) => {
         : {}),
     },
     handler: async (request, response, context) => {
+      const page: Page = cliArgs?.experimentalPageIdRouting
+        ? context.resolvePageById(request.params.pageId)
+        : context.getSelectedPage();
+
       const args: Array<JSHandle<unknown>> = [];
       try {
         const frames = new Set<Frame>();
         for (const el of request.params.args ?? []) {
-          const handle = await context.getElementByUid(el.uid, request.page);
+          const handle = await context.getElementByUid(el.uid, page);
           frames.add(handle.frame);
           args.push(handle);
         }
 
         const evaluatable = await getEvaluatable(
           context,
+          page,
           frames,
           cliArgs?.categoryExtensions,
           request.params.serviceWorkerId as string | undefined,
@@ -103,6 +109,7 @@ Example with arguments: \`(el) => {
 
 const getEvaluatable = async (
   context: Context,
+  page: Page,
   frames: Set<Frame>,
   enableExtensions?: boolean,
   serviceWorkerId?: string,
@@ -110,11 +117,12 @@ const getEvaluatable = async (
   if (enableExtensions && serviceWorkerId) {
     return getWebWorker(context, serviceWorkerId);
   }
-  return getPageOrFrame(context, frames);
+  return getPageOrFrame(context, page, frames);
 };
 
 const getPageOrFrame = async (
   context: Context,
+  page: Page,
   frames: Set<Frame>,
 ): Promise<Page | Frame> => {
   let pageOrFrame: Page | Frame;
@@ -124,7 +132,7 @@ const getPageOrFrame = async (
       "Elements from different frames can't be evaluated together.",
     );
   } else {
-    pageOrFrame = [...frames.values()][0] ?? context.getSelectedPage();
+    pageOrFrame = [...frames.values()][0] ?? page;
   }
 
   return pageOrFrame;

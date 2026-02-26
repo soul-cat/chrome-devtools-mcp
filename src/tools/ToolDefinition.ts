@@ -142,6 +142,7 @@ export type Context = Readonly<{
   getDialog(page?: Page): Dialog | undefined;
   clearDialog(page?: Page): void;
   getPageById(pageId: number): Page;
+  resolvePageById(pageId?: number): Page;
   newPage(background?: boolean, isolatedContextName?: string): Promise<Page>;
   closePage(pageId: number): Promise<void>;
   selectPage(page: Page): void;
