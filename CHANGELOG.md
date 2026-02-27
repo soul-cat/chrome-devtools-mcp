@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.19.0](https://github.com/ChromeDevTools/chrome-devtools-mcp/compare/chrome-devtools-mcp-v0.18.1...chrome-devtools-mcp-v0.19.0) (2026-02-27)
+
+
+### 🎉 Features
+
+* add pageId routing for parallel multi-agent workflows ([#1022](https://github.com/ChromeDevTools/chrome-devtools-mcp/issues/1022)) ([caf601a](https://github.com/ChromeDevTools/chrome-devtools-mcp/commit/caf601a32832bb87cfac801a6bbeacb87508412f)), closes [#1019](https://github.com/ChromeDevTools/chrome-devtools-mcp/issues/1019)
+* integrate Lighthouse audits ([#831](https://github.com/ChromeDevTools/chrome-devtools-mcp/issues/831)) ([dfdac26](https://github.com/ChromeDevTools/chrome-devtools-mcp/commit/dfdac2648e560d756a8711ad3bb1fa470be8e7c9))
+
+
+### 📄 Documentation
+
+* Adapt a11y skill to utilize Lighthouse ([#1054](https://github.com/ChromeDevTools/chrome-devtools-mcp/issues/1054)) ([21634e6](https://github.com/ChromeDevTools/chrome-devtools-mcp/commit/21634e660c346e469ae62116b1824538f51567dd))
+
+
+### ♻️ Chores
+
+* improve type safety for page scoped tools ([#1051](https://github.com/ChromeDevTools/chrome-devtools-mcp/issues/1051)) ([5f694c6](https://github.com/ChromeDevTools/chrome-devtools-mcp/commit/5f694c60ffd21f8b022554c92b2ad4cbdb457375))
+* move server to a separate file ([#1043](https://github.com/ChromeDevTools/chrome-devtools-mcp/issues/1043)) ([a8bf3e5](https://github.com/ChromeDevTools/chrome-devtools-mcp/commit/a8bf3e585682c3126dfd378e9f98b5dc7ab6045d))
+
 ## [0.18.1](https://github.com/ChromeDevTools/chrome-devtools-mcp/compare/chrome-devtools-mcp-v0.18.0...chrome-devtools-mcp-v0.18.1) (2026-02-25)
 
 
