@@ -247,5 +247,60 @@ describe('script', () => {
         {categoryExtensions: true} as ParsedArguments,
       );
     });
+
+    it('throws error when both pageId and serviceWorkerId are provided', async () => {
+      await withMcpContext(
+        async (response, context) => {
+          await assert.rejects(
+            evaluateScript({
+              categoryExtensions: true,
+            } as ParsedArguments).handler(
+              {
+                params: {
+                  function: String(() => 'test'),
+                  serviceWorkerId: 'example_service_worker',
+                  pageId: '1',
+                },
+              },
+              response,
+              context,
+            ),
+            {
+              message: 'specify either a pageId or a serviceWorkerId.',
+            },
+          );
+        },
+        {},
+        {categoryExtensions: true} as ParsedArguments,
+      );
+    });
+
+    it('throws error when args are provided with serviceWorkerId', async () => {
+      await withMcpContext(
+        async (response, context) => {
+          await assert.rejects(
+            evaluateScript({
+              categoryExtensions: true,
+            } as ParsedArguments).handler(
+              {
+                params: {
+                  function: String(() => 'test'),
+                  serviceWorkerId: 'example_service_worker',
+                  args: [{uid: '1_1'}],
+                },
+              },
+              response,
+              context,
+            ),
+            {
+              message:
+                'args (element uids) cannot be used when evaluating in a service worker.',
+            },
+          );
+        },
+        {},
+        {categoryExtensions: true} as ParsedArguments,
+      );
+    });
   });
 });

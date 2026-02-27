@@ -621,7 +621,7 @@ export class McpContext implements Context {
       const mcpPage = this.#mcpPages.get(page);
       if (!mcpPage?.textSnapshot) {
         throw new Error(
-          `No snapshot found for page ${mcpPage?.id ?? '?'}. Use take_snapshot to capture one.`,
+          `No snapshot found for page ${mcpPage?.id ?? '?'}. Use ${takeSnapshot.name} to capture one.`,
         );
       }
       const node = mcpPage.textSnapshot.idToNode.get(uid);
@@ -662,7 +662,9 @@ export class McpContext implements Context {
       }
     }
     if (!anySnapshot) {
-      throw new Error(`No snapshot found. Use take_snapshot to capture one.`);
+      throw new Error(
+        `No snapshot found. Use ${takeSnapshot.name} to capture one.`,
+      );
     }
     throw new Error('No such element found in any snapshot.');
   }

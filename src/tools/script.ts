@@ -9,7 +9,7 @@ import {zod} from '../third_party/index.js';
 import type {Frame, JSHandle, Page, WebWorker} from '../third_party/index.js';
 
 import {ToolCategory} from './categories.js';
-import type {Context} from './ToolDefinition.js';
+import type {Context, Response} from './ToolDefinition.js';
 import {defineTool, pageIdSchema} from './ToolDefinition.js';
 
 export type Evaluatable = Page | Frame | WebWorker;
@@ -61,6 +61,28 @@ Example with arguments: \`(el) => {
         : {}),
     },
     handler: async (request, response, context) => {
+      const {
+        serviceWorkerId,
+        args: uidArgs,
+        function: fnString,
+        pageId,
+      } = request.params;
+
+      if (cliArgs?.categoryExtensions && serviceWorkerId) {
+        if (uidArgs && uidArgs.length > 0) {
+          throw new Error(
+            'args (element uids) cannot be used when evaluating in a service worker.',
+          );
+        }
+        if (pageId) {
+          throw new Error('specify either a pageId or a serviceWorkerId.');
+        }
+
+        const worker = await getWebWorker(context, serviceWorkerId);
+        await performEvaluation(worker, fnString, [], response, context);
+        return;
+      }
+
       const page: Page = cliArgs?.experimentalPageIdRouting
         ? context.resolvePageById(request.params.pageId)
         : context.getSelectedPage();
@@ -68,38 +90,15 @@ Example with arguments: \`(el) => {
       const args: Array<JSHandle<unknown>> = [];
       try {
         const frames = new Set<Frame>();
-        for (const el of request.params.args ?? []) {
+        for (const el of uidArgs ?? []) {
           const handle = await context.getElementByUid(el.uid, page);
           frames.add(handle.frame);
           args.push(handle);
         }
 
-        const evaluatable = await getEvaluatable(
-          context,
-          page,
-          frames,
-          cliArgs?.categoryExtensions,
-          request.params.serviceWorkerId as string | undefined,
-        );
+        const evaluatable = await getPageOrFrame(context, page, frames);
 
-        const fn = await evaluatable.evaluateHandle(
-          `(${request.params.function})`,
-        );
-        args.unshift(fn);
-
-        await context.waitForEventsAfterAction(async () => {
-          const result = await evaluatable.evaluate(
-            async (fn, ...args) => {
-              // @ts-expect-error no types.
-              return JSON.stringify(await fn(...args));
-            },
-            ...args,
-          );
-          response.appendResponseLine('Script ran on page and returned:');
-          response.appendResponseLine('```json');
-          response.appendResponseLine(`${result}`);
-          response.appendResponseLine('```');
-        });
+        await performEvaluation(evaluatable, fnString, args, response, context);
       } finally {
         void Promise.allSettled(args.map(arg => arg.dispose()));
       }
@@ -107,17 +106,32 @@ Example with arguments: \`(el) => {
   };
 });
 
-const getEvaluatable = async (
+const performEvaluation = async (
+  evaluatable: Evaluatable,
+  fnString: string,
+  args: Array<JSHandle<unknown>>,
+  response: Response,
   context: Context,
-  page: Page,
-  frames: Set<Frame>,
-  enableExtensions?: boolean,
-  serviceWorkerId?: string,
-): Promise<Evaluatable> => {
-  if (enableExtensions && serviceWorkerId) {
-    return getWebWorker(context, serviceWorkerId);
+) => {
+  const fn = await evaluatable.evaluateHandle(`(${fnString})`);
+  try {
+    await context.waitForEventsAfterAction(async () => {
+      const result = await evaluatable.evaluate(
+        async (fn, ...args) => {
+          // @ts-expect-error no types for function fn
+          return JSON.stringify(await fn(...args));
+        },
+        fn,
+        ...args,
+      );
+      response.appendResponseLine('Script ran on page and returned:');
+      response.appendResponseLine('```json');
+      response.appendResponseLine(`${result}`);
+      response.appendResponseLine('```');
+    });
+  } finally {
+    void fn.dispose();
   }
-  return getPageOrFrame(context, page, frames);
 };
 
 const getPageOrFrame = async (
